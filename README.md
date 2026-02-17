@@ -1,4 +1,6 @@
-# APD
+# The Amyloid Packing Difference (APD)
+
+The APD is a new metric for the pair-wise comparison of amyloid structures. Based on the observation that distinct amyloid folds are driven by specific cross-beta side chain packing interactions, the APD directly compares lists of these interactions for any pair of amyloid structures.  Thereby, the APD is invariant to the relative orientation of the structures, precluding the need for their alignment. Clustering of alpha-synuclein protofilament folds based on pairwise APD values recapitulates their classification based on RMSDs or TM-scores and structural alignments. Moreover, the observation that any pair of known protofilament folds of the prion protein, tau, alpha-synuclein, TDP-43 or TAF15 from different diseases have APDs above 20%, and all pairs of structures that have been associated with the same disease have APDs below 40%, provide a useful context to interpret APD values for new comparisons
 
 The calculation of the APD for any pair of amyloid structures (in PDB or CIF format) consists of a two-step procedure, each of which is implemented as a separate python script. A third script is auxiliary. The scripts require Biopython.  
 
