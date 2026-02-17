@@ -4,7 +4,7 @@ The APD is a metric for the pair-wise comparison of amyloid structures. Based on
 
 The calculation of the APD for any pair of amyloid structures (in PDB or CIF format) consists of a two-step procedure, each of which is implemented as a separate python script. A third script is auxiliary. The scripts require [Biopython](https://biopython.org/).  
 
-## Step 1: contacts.py calculates contacts for an amyloid structure
+## Step 1: contacts.py
 The first script, contacts.py, generates a list of contacts for a given input structure. Because the main chain within a given layer of the amyloid filament may meander up and/or down the helical axis (which is assumed to be along the Z-direction), the closest contacts between pairs of residues may be between different layers of the amyloid. The input structure needs to contain sufficient layers to capture all these contacts. To facilitate the generation of structures with multiple identical layers, an auxiliary python script called helix.py was implemented to apply helical symmetry operators to a specified subset of chains of an input structure.
 
 The contacts.py script identifies protofilaments in the input structure based on the distances between CA atoms of residues with identical residue numbers in the Z-direction. For each protofilament, it then identifies the chain corresponding to the middle layer. For every residue in the middle chain of each protofilament, the script identifies pairwise residue-residue contacts. Two residues are considered to form a contact if at least one pair of their non-hydrogen side-chain atoms (or CA atoms in the case of glycine) are within 6.5 Å. When multiple atom pairs between the same two residues satisfy this criterion, only the shortest distance is stored. Contacts between residues that are adjacent to each other, or separated by one residue within the same chain, are excluded. Moreover, to avoid counting contacts between side chains that are on opposite sides of the amino acid backbone, the script defines a reference plane for each residue. This plane is defined by the positions of the N and C atoms of that residue, and the position of the N atom of the corresponding residue in the next layer. Then, contacts are only kept if, for both of its residues, the two contacting atoms are on the same side of the plane as its CB atom. For glycines, which lack a CB atom, the planes are ignored.
@@ -13,7 +13,7 @@ Contacts are classified as intra- or inter-protofilament, depending on whether t
 
 Finally, the contacts.py script calculates for each residue in the middle layer of the input amyloid structure whether its CB atom is on the left or the right side of its N-N-C plane. The information about all contacts and the left or right-orientation of all middle-layer residues is written in a CSV file.
 
-## Step 2: compare.py calculates the APD from lists of contacts for two structures
+## Step 2: compare.py
 
 The second script, compare.py, takes the CSV files from two different amyloid structures as inputs to perform the comparison. The two input structures may differ in the extent of the ordered filament core. The script will calculate the number of residues that are ordered in both input structures (Ncommon), as well as the number of residues that are only present in the input structure with the largest ordered core (Nextra).
 
