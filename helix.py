@@ -89,14 +89,6 @@ def parse_args():
     return parser.parse_args()
 
 
-def compute_output_name(input_filename):
-    """
-    Compute output CIF filename as <basename>_helix.cif.
-    """
-    base = os.path.splitext(os.path.basename(input_filename))[0]
-    return base + "_helix.cif"
-
-
 def compute_axis_xy(args):
     """
     Compute XY position of the helical axis.
@@ -176,7 +168,7 @@ def main():
     args = parse_args()
 
     if args.output is None:
-        output_path = compute_output_name(args.input) + "_helix.cif"
+        output_path = os.path.splitext(os.path.basename(args.input))[0] + "_helix.cif"
     else:
         output_path = args.output
 
