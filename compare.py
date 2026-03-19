@@ -84,8 +84,17 @@ def parse_int_or_none(s):
     return int(s)
 
 
+def normalize_handed_label(h):
+    """Normalize handedness labels; treat blank/NA-like values as missing."""
+    h = str(h).strip()
+    if h.upper() in ("", "NA", "N/A", "NONE", "NULL"):
+        return None
+    return h
+
+
 def flip_handed_label(h):
     """Flip handedness label for global comparison."""
+    h = normalize_handed_label(h)
     if h == "R":
         return "L"
     if h == "L":
@@ -721,25 +730,46 @@ def write_svg(
                 resname = rinfo["resname"].upper()
                 letter = one_letter_code.get(resname, "?")
 
-                if keyr in unique_residue_set:
+                is_unique = keyr in unique_residue_set
+                is_mutated = keyr in mutated_residues
+                is_handed_flip = keyr in handed_diff_residues
+
+                if is_unique:
                     # Unique residues: white fill, grey outline, grey label
                     fill_color = "white"
                     text_color = "#D3D3D3"
                 else:
-                    if keyr in mutated_residues:
+                    if is_mutated:
                         fill_color = "#FF5342"
-                    elif keyr in handed_diff_residues:
+                    elif is_handed_flip:
                         fill_color = "#FF9463"
                     else:
                         fill_color = "white"
                     text_color = "black"
 
-                stroke_color = "#D3D3D3" if keyr in unique_residue_set else "black"
-                f.write(
-                    '  <circle cx="%.1f" cy="%.1f" r="%.1f" '
-                    'fill="%s" stroke="%s" stroke-width="2" />\n'
-                    % (x, y, circle_r_px, fill_color, stroke_color)
-                )
+                stroke_color = "#D3D3D3" if is_unique else "black"
+                if (not is_unique) and is_mutated and is_handed_flip:
+                    f.write(
+                        '  <path d="M %.1f %.1f A %.1f %.1f 0 0 1 %.1f %.1f L %.1f %.1f Z" '
+                        'fill="#FF5342" stroke="none" />\n'
+                        % (x, y - circle_r_px, circle_r_px, circle_r_px, x, y + circle_r_px, x, y)
+                    )
+                    f.write(
+                        '  <path d="M %.1f %.1f A %.1f %.1f 0 0 0 %.1f %.1f L %.1f %.1f Z" '
+                        'fill="#FF9463" stroke="none" />\n'
+                        % (x, y - circle_r_px, circle_r_px, circle_r_px, x, y + circle_r_px, x, y)
+                    )
+                    f.write(
+                        '  <circle cx="%.1f" cy="%.1f" r="%.1f" '
+                        'fill="none" stroke="%s" stroke-width="2" />\n'
+                        % (x, y, circle_r_px, stroke_color)
+                    )
+                else:
+                    f.write(
+                        '  <circle cx="%.1f" cy="%.1f" r="%.1f" '
+                        'fill="%s" stroke="%s" stroke-width="2" />\n'
+                        % (x, y, circle_r_px, fill_color, stroke_color)
+                    )
                 label_y = y + circle_r_px * 0.5
                 f.write(
                     '  <text x="%.1f" y="%.1f" '
@@ -1059,14 +1089,16 @@ def main():
             direct_mismatches = 0
             flipped_mismatches = 0
             for key in common_residues:
-                h1 = residues1[key]["handed"]
-                h2 = residues2[key]["handed"]
+                h1 = normalize_handed_label(residues1[key]["handed"])
+                h2 = normalize_handed_label(residues2[key]["handed"])
+                if h1 is None or h2 is None:
+                    continue
                 if h1 != h2:
                     direct_mismatches += 1
                 if h1 != flip_handed_label(h2):
                     flipped_mismatches += 1
-            print("Handedness mismatches without flip:", direct_mismatches)
-            print("Handedness mismatches with global flip:", flipped_mismatches)
+            print("Handedness mismatches without flip (ignoring blank/NA):", direct_mismatches)
+            print("Handedness mismatches with global flip (ignoring blank/NA):", flipped_mismatches)
             if flipped_mismatches < direct_mismatches:
                 apply_handed_flip = True
                 print("Using GLOBAL FLIP of handedness for structure 2.")
@@ -1081,8 +1113,10 @@ def main():
             if r1["resname"] != r2["resname"]:
                 mutated.add(key)
 
-            h1 = r1["handed"]
-            h2 = r2["handed"]
+            h1 = normalize_handed_label(r1["handed"])
+            h2 = normalize_handed_label(r2["handed"])
+            if h1 is None or h2 is None:
+                continue
             if apply_handed_flip:
                 h2 = flip_handed_label(h2)
             if h1 != h2:
